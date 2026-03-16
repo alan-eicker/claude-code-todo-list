@@ -43,6 +43,25 @@ Choose the simplest solution that fits the problem. Escalate only when justified
 - Never use legacy Redux (no `createStore`, no hand-written reducers without RTK).
 - Colocate state as close to where it is used as possible.
 
+**Reducer conventions:**
+
+- Action types must be discriminated unions with `UPPER_SNAKE_CASE` string literals:
+  ```ts
+  type TodoAction =
+    | { type: 'ADD_TODO'; payload: string }
+    | { type: 'TOGGLE_TODO'; payload: string };
+  ```
+- Reducers must use exhaustive `switch` statements. Do not add a `default` case when TypeScript fully narrows the union — a missing case becomes a compile error, which is the desired behaviour.
+- Custom hooks that return more than one value must export a named return type interface so callers can type destructured values explicitly:
+  ```ts
+  export interface UseTodosReturn {
+    todos: Todo[];
+    addTodo: (text: string) => void;
+    // ...
+  }
+  export const useTodos = (): UseTodosReturn => { ... };
+  ```
+
 ---
 
 ## Data Fetching
@@ -74,6 +93,14 @@ User-generated state must survive a page refresh. Do not leave state ephemeral u
 - **Container Queries** — prefer over media queries when the layout depends on the component's container width, not the viewport. Use `@container` for component-level responsiveness and reserve `@media` for true viewport-level breakpoints (e.g., global layout shifts).
 - No inline styles except for truly dynamic values (e.g., calculated widths set via JS).
 - No CSS-in-JS libraries (styled-components, Emotion, etc.).
+- Use `color-mix()` for semi-transparent tints rather than hardcoded `rgba` values. This keeps tints relative to the design token and automatically adapts when the token changes:
+  ```css
+  /* Preferred */
+  background-color: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  /* Avoid */
+  background-color: rgba(79, 70, 229, 0.08);
+  ```
+- Use `min-height: 100dvh` (dynamic viewport height) rather than `100vh` for full-height layouts. `100vh` does not account for the collapsible address bar on mobile browsers, which causes layout overflow on first load.
 
 **CSS Variable conventions:**
 
@@ -103,6 +130,10 @@ Accessibility is a first-class requirement, not an afterthought.
 - Maintain a logical heading hierarchy (`h1` → `h2` → `h3`); do not skip levels.
 - Form inputs must have associated `<label>` elements (explicit `htmlFor` or wrapping label).
 - Target touch/click areas must be at least 44×44px.
+- Decorative inline SVGs must carry **both** `aria-hidden="true"` and `focusable="false"`. The `aria-hidden` hides the element from the accessibility tree; `focusable="false"` is still required for IE/legacy Edge which otherwise allows SVG elements to receive focus independently.
+- Toggle and filter buttons must use `aria-pressed` (not just a visual active class) to communicate state to assistive technology. `aria-pressed` must always be an explicit `"true"` or `"false"` string — never absent.
+- Dynamic text that updates without a page navigation (item counts, status messages) must use `aria-live="polite"` and `aria-atomic="true"` so screen readers announce the full updated string rather than just the changed characters.
+- Forms that implement custom JavaScript validation must include `noValidate` on the `<form>` element to suppress the browser's native validation UI and prevent duplicate or inconsistent error messaging.
 
 ---
 
@@ -182,6 +213,15 @@ Testing is mandatory. All new features and bug fixes must include tests.
 - Prefer `userEvent` over `fireEvent` for simulating user interactions.
 - Aim for meaningful coverage, not 100% line coverage for its own sake — focus on critical paths and edge cases.
 - Mock only at the boundary (API calls, third-party modules) — do not over-mock.
+- Every test suite that reads or writes `localStorage` must call `localStorage.clear()` in `beforeEach`. Never rely on test ordering to provide a clean slate.
+- Logic-only hooks (no rendered DOM output) cannot be passed to `axe`. Import `jest-axe` anyway to satisfy the project convention, mark the imports as intentionally unused with `void`, and include a comment explaining why no axe assertion is present:
+  ```ts
+  // Note: this hook renders no DOM — axe imported to satisfy project convention.
+  void axe;
+  void toHaveNoViolations;
+  ```
+- Shared test fixtures (mock objects, test data) must be module-level constants defined before the `describe` block, not inside individual `it` callbacks. This avoids accidental mutation across tests and keeps setup readable.
+- jsdom is missing several browser APIs used by this project. Add all polyfills and stubs to `src/setupTests.ts` — do not patch globals inline inside individual test files. Current required stubs: `crypto.randomUUID` (via Node's built-in `crypto`), `window.matchMedia`.
 
 ### Coverage
 
@@ -224,7 +264,18 @@ it('has no accessibility violations', async () => {
 - Tests live in `e2e/` at the project root, split by concern: `<feature>.spec.ts` for user flows, `accessibility.spec.ts` for axe checks.
 - Configure `playwright.config.ts` with a `webServer` block so `npm run test:e2e` starts the dev server automatically.
 - Use `getByRole`, `getByLabel`, and `getByText` locators — avoid CSS selectors and `data-testid` where possible.
-- Each test must be independent. Use `page.addInitScript(() => localStorage.clear())` (or equivalent) in `beforeEach` to reset client-side state before every test.
+- Each test must be independent. Reset `localStorage` in `beforeEach` using the `goto + evaluate(clear) + reload` pattern — **not** `addInitScript`. Using `addInitScript` re-runs the clear on every subsequent `reload`, which breaks persistence tests that intentionally reload to verify saved state:
+  ```ts
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+  });
+  ```
+- Repeated or ambiguous locators that require scoping (e.g. filter buttons inside a `<nav>`) must be extracted into a named helper function at the top of the spec file rather than duplicated inline:
+  ```ts
+  const filterNav = (page: Page) => page.getByRole('navigation', { name: 'Filter todos' });
+  ```
 - **Run `@axe-core/playwright` on every key page/state** in a dedicated `accessibility.spec.ts`. A violation fails the build.
 - In CI, set `forbidOnly: !!process.env.CI` and `retries: 2` in the Playwright config.
 - Run locally with `npm run test:e2e`; use `npm run test:e2e:ui` for the interactive Playwright UI.
@@ -296,6 +347,25 @@ features/
 - Colocate related files: `ComponentName/index.tsx`, `ComponentName.module.css`, `ComponentName.test.tsx`.
 - Export components as named exports; use default exports only at page/route boundaries.
 - Avoid prop drilling beyond 2 levels — use Context or lift state appropriately.
+- `React.memo` and `useCallback` must always be used together on list-item components. `React.memo` alone provides no benefit if the parent passes new function references on every render. Wrap the child with `memo` and stabilise every callback prop with `useCallback` in the parent hook:
+  ```ts
+  // In the hook — stable references
+  const toggleTodo = useCallback((id: string) => dispatch(...), [dispatch]);
+
+  // On the component — bail out of re-renders when props are unchanged
+  export const TodoItem = memo(TodoItemComponent);
+  ```
+  When wrapping an arrow function component in `memo`, define the component as a named const first (`TodoItemComponent`) and then export the memoised version (`export const TodoItem = memo(TodoItemComponent)`) so React DevTools and the `react/display-name` lint rule can identify the component correctly.
+- Private sub-components used exclusively within one parent file (e.g. icon components like `SunIcon`, `MoonIcon`) may be defined in the same file above the main export. They do not need their own folder. Apply the same rules as any component: arrow function, explicit props interface, `aria-hidden="true"` if decorative.
+- Use `crypto.randomUUID()` for client-side ID generation. It is available natively in all modern browsers and in Node 19+. Do not install `uuid`, `nanoid`, or similar libraries for this purpose. Polyfill it in `setupTests.ts` for Jest (jsdom does not expose it by default).
+- Enumerable UI options that drive a rendered list (e.g. filter buttons) must be defined as a typed module-level constant rather than inline JSX, keeping the render function declarative:
+  ```ts
+  const FILTERS: { value: FilterType; label: string }[] = [
+    { value: 'all', label: 'All' },
+    { value: 'active', label: 'Active' },
+    { value: 'completed', label: 'Completed' },
+  ];
+  ```
 
 ---
 
@@ -330,6 +400,16 @@ Use **Next.js** when:
 - API routes are needed
 
 Benefits: file-based routing, server components, built-in image optimization, ISR/SSG/SSR.
+
+---
+
+## Performance
+
+- **Theme initialisation must use an inline `<script>` in `<head>`**, not a `useEffect` or `useState` initializer. The inline script runs synchronously before the first paint, setting `data-theme` on `<html>` before any CSS is applied. This prevents a flash of the wrong colour scheme and eliminates the CLS it would cause. The hook reads the same stored value but does not touch the DOM on mount — it only syncs changes via `useEffect`.
+- **Build output must split the React vendor chunk** from application code via Vite's `manualChunks`. This allows browsers to cache React and ReactDOM independently from app code, so a code-only deploy does not invalidate the vendor bundle.
+- **Strip `console.*` and `debugger` statements** from production builds using esbuild's `drop` option in `vite.config.ts`. Never ship debug output to production.
+- **Measure performance against a production build** (`npm run build && npm run preview`), not the dev server. Lighthouse scores on the dev server are always artificially low due to unminified, uncompressed bundles.
+- **Avoid side effects in `useState` initialisers.** The initialiser function runs during React's render phase. DOM mutations (e.g. `document.documentElement.setAttribute`) belong in `useEffect` for reactive updates, or in an inline script for one-time initialisation before React mounts.
 
 ---
 
