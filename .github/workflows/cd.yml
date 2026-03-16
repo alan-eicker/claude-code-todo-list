@@ -57,7 +57,7 @@ jobs:
           retention-days: 30
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium msedge
 
       - name: E2E tests
         run: npm run test:e2e
