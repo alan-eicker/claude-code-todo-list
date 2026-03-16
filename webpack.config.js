@@ -17,6 +17,10 @@ module.exports = (_env, argv) => {
       // Content-hash filenames in production for long-term caching.
       filename: isProd ? '[name].[contenthash].js' : '[name].js',
       chunkFilename: isProd ? '[name].[contenthash].js' : '[name].js',
+      // Allow the public path to be overridden via an environment variable.
+      // Used in CI to set the correct base path for GitHub Pages deployments
+      // (e.g. PUBLIC_PATH=/claude-code-todo-list/). Defaults to / for local dev.
+      publicPath: process.env.PUBLIC_PATH || '/',
       clean: true,
     },
 

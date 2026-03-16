@@ -86,9 +86,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # GitHub project pages are served from /<repo-name>/ — pass the correct base path.
+      # GitHub project pages are served from /<repo-name>/ — set the correct public path.
       - name: Build
-        run: npm run build -- --base=/${{ github.event.repository.name }}/
+        run: npm run build
+        env:
+          PUBLIC_PATH: /${{ github.event.repository.name }}/
 
       - name: Configure Pages
         uses: actions/configure-pages@v4
