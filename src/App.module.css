@@ -18,9 +18,20 @@
   gap: var(--spacing-lg);
 }
 
+.header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .heading {
   font-size: var(--font-size-2xl);
   font-weight: 700;
   color: var(--color-primary);
-  text-align: center;
+}
+
+.themeToggleWrapper {
+  position: absolute;
+  right: 0;
 }

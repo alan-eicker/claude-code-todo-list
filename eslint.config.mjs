@@ -54,4 +54,12 @@ export default [
       },
     },
   },
+  {
+    files: ['playwright.config.ts', 'vite.config.ts'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
 ];

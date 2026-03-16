@@ -52,6 +52,14 @@ test.describe('Accessibility', () => {
     await expect(page.getByLabel('New todo')).toBeVisible();
   });
 
+  test('dark mode has no accessibility violations', async ({ page }) => {
+    await page.getByRole('button', { name: /switch to dark mode/i }).click();
+    // Wait for CSS transitions (150ms) to complete before running axe
+    await page.waitForTimeout(200);
+    const results = await new AxeBuilder({ page }).analyze();
+    expect(results.violations).toEqual([]);
+  });
+
   test('filter buttons communicate pressed state', async ({ page }) => {
     await expect(filterNav(page).getByRole('button', { name: 'All' })).toHaveAttribute(
       'aria-pressed',

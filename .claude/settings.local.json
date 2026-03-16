@@ -14,7 +14,11 @@
       "Bash(npx playwright install chromium)",
       "Bash(npx eslint src e2e --ext .ts,.tsx)",
       "Bash(npx tsc --project tsconfig.node.json --noEmit)",
-      "Bash(npm run test:e2e)"
+      "Bash(npm run test:e2e)",
+      "Bash(npm test -- --passWithNoTests)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npm run lint)",
+      "Bash(npx tsc -p tsconfig.node.json --noEmit)"
     ]
   }
 }

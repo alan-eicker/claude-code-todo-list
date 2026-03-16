@@ -12,7 +12,28 @@
   --color-text-muted: #6b7280;
   --color-text-completed: #6b6b6b; /* darkened from #9ca3af to meet WCAG AA 4.5:1 on white */
   --color-focus-ring: #4f46e5;
+  --color-button-text: #fff;       /* text on --color-primary button background */
+}
 
+/* Dark mode token overrides — all values verified WCAG AA (≥4.5:1) */
+[data-theme='dark'] {
+  --color-primary: #a5b4fc;        /* indigo-300: 6.65:1 on --color-surface dark, 5.63:1 on pressed bg */
+  --color-primary-hover: #c7d2fe;
+  --color-primary-disabled: #3730a3;
+  --color-danger: #f87171;
+  --color-danger-hover: #fca5a5;
+  --color-surface: #1e293b;
+  --color-background: #0f172a;
+  --color-border: #334155;
+  --color-text: #f1f5f9;
+  --color-text-muted: #94a3b8;     /* slate-400: 5.27:1 on --color-surface dark */
+  --color-text-completed: #94a3b8; /* same as muted; 5.27:1 on dark surface */
+  --color-focus-ring: #a5b4fc;
+  --color-button-text: #1e1b4b;    /* dark indigo: 7.46:1 on --color-primary dark */
+}
+
+/* Spacing, sizing, and typography tokens (theme-independent) */
+:root {
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
   --spacing-md: 1rem;

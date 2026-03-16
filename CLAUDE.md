@@ -127,7 +127,7 @@ All projects must enforce the following tools via CI. No exceptions.
 ### Prettier
 
 - Single source of truth for all code formatting — never configure formatting rules in ESLint.
-- Required config:
+- All projects must include a `.prettierrc` at the repo root. Required rules:
 
 ```json
 {
@@ -140,6 +140,34 @@ All projects must enforce the following tools via CI. No exceptions.
 ```
 
 - Run `prettier --check` in CI; fail the build on formatting violations.
+
+### VS Code
+
+Every project must include a `.vscode/settings.json` that sets Prettier as the default formatter, points to `.prettierrc`, and enables format-on-save:
+
+```json
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "prettier.configPath": ".prettierrc",
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}
+```
+
+- `"prettier.configPath": ".prettierrc"` ensures the extension reads from the project config, not any global user settings.
+- This ensures every contributor's editor formats consistently without manual configuration.
+- Do not commit `.vscode/extensions.json` or other personal editor preferences — only formatter settings belong here.
 
 ---
 

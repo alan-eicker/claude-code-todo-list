@@ -167,3 +167,28 @@ test.describe('Persistence', () => {
     );
   });
 });
+
+test.describe('Theme toggle', () => {
+  test.use({ colorScheme: 'light' });
+
+  test('toggle button is visible', async ({ page }) => {
+    await expect(page.getByRole('button', { name: /switch to dark mode/i })).toBeVisible();
+  });
+
+  test('clicking the toggle switches to dark mode', async ({ page }) => {
+    await page.getByRole('button', { name: /switch to dark mode/i }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  });
+
+  test('clicking the toggle twice returns to light mode', async ({ page }) => {
+    await page.getByRole('button', { name: /switch to dark mode/i }).click();
+    await page.getByRole('button', { name: /switch to light mode/i }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  });
+
+  test('theme preference persists across a page reload', async ({ page }) => {
+    await page.getByRole('button', { name: /switch to dark mode/i }).click();
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  });
+});
