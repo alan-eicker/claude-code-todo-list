@@ -3,7 +3,22 @@ import AxeBuilder from '@axe-core/playwright';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await page.evaluate(() => localStorage.clear());
+  await page.evaluate(async () => {
+    // Use clear() rather than deleteDatabase() to avoid blocking on open connections.
+    localStorage.clear();
+    await new Promise<void>((resolve) => {
+      const req = indexedDB.open('todo-list-db', 1);
+      req.onsuccess = () => {
+        const db = req.result;
+        const tx = db.transaction('store', 'readwrite');
+        tx.objectStore('store').clear();
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onerror = () => { db.close(); resolve(); };
+      };
+      req.onerror = () => resolve();
+      req.onupgradeneeded = () => resolve(); // DB didn't exist yet — nothing to clear
+    });
+  });
   await page.reload();
 });
 

@@ -1,12 +1,14 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe, toHaveNoViolations } from 'jest-axe';
 import { App } from './App';
+import { flushIDB } from './test-utils';
 
 expect.extend(toHaveNoViolations);
 
 describe('App', () => {
   beforeEach(() => {
+    // Clear theme preference so each test starts in light mode.
     localStorage.clear();
   });
 
@@ -69,10 +71,16 @@ describe('App', () => {
     const { unmount } = render(<App />);
     await userEvent.type(screen.getByLabelText(/new todo/i), 'Persistent task');
     await userEvent.click(screen.getByRole('button', { name: /add/i }));
+
+    // Allow the async IndexedDB write to complete before unmounting.
+    await flushIDB();
     unmount();
 
     render(<App />);
-    expect(screen.getByText('Persistent task')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByText('Persistent task')).toBeInTheDocument();
+    });
   });
 
   it('persists completed state across a simulated page refresh', async () => {
@@ -80,10 +88,15 @@ describe('App', () => {
     await userEvent.type(screen.getByLabelText(/new todo/i), 'Complete me');
     await userEvent.click(screen.getByRole('button', { name: /add/i }));
     await userEvent.click(screen.getByRole('checkbox', { name: /mark "complete me"/i }));
+
+    await flushIDB();
     unmount();
 
     render(<App />);
-    expect(screen.getByRole('checkbox', { name: /mark "complete me"/i })).toBeChecked();
+
+    await waitFor(() => {
+      expect(screen.getByRole('checkbox', { name: /mark "complete me"/i })).toBeChecked();
+    });
   });
 
   it('updates the active count', async () => {

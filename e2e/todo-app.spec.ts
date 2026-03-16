@@ -1,11 +1,52 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
-// Navigate to the page, then clear localStorage and reload so the app starts
-// with empty state. Using evaluate (not addInitScript) means subsequent
+// Waits for all pending IndexedDB writes on 'store' to flush by opening a
+// readonly transaction (which queues behind any in-flight readwrite transactions).
+const waitForIDB = (page: Page) =>
+  page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        const req = indexedDB.open('todo-list-db');
+        req.onsuccess = () => {
+          const db = req.result;
+          try {
+            const tx = db.transaction('store', 'readonly');
+            tx.oncomplete = () => { db.close(); resolve(); };
+            tx.onerror = () => { db.close(); resolve(); };
+            tx.objectStore('store').count(); // register the transaction
+          } catch {
+            db.close();
+            resolve();
+          }
+        };
+        req.onerror = () => resolve();
+        req.onupgradeneeded = () => resolve();
+      }),
+  );
+
+// Navigate to the page, clear all client-side storage, then reload so the app
+// starts with empty state. Using evaluate (not addInitScript) means subsequent
 // page.reload() calls in persistence tests do NOT re-clear storage.
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await page.evaluate(() => localStorage.clear());
+  await page.evaluate(async () => {
+    // Clear theme preference (localStorage) and todo state (IndexedDB).
+    // Use a clear() transaction rather than deleteDatabase() to avoid blocking
+    // on open connections held by the app.
+    localStorage.clear();
+    await new Promise<void>((resolve) => {
+      const req = indexedDB.open('todo-list-db', 1);
+      req.onsuccess = () => {
+        const db = req.result;
+        const tx = db.transaction('store', 'readwrite');
+        tx.objectStore('store').clear();
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onerror = () => { db.close(); resolve(); };
+      };
+      req.onerror = () => resolve();
+      req.onupgradeneeded = () => resolve(); // DB didn't exist yet — nothing to clear
+    });
+  });
   await page.reload();
 });
 
@@ -136,6 +177,7 @@ test.describe('Persistence', () => {
   test('todos survive a full page reload', async ({ page }) => {
     await page.getByLabel('New todo').fill('Persistent task');
     await page.getByRole('button', { name: 'Add' }).click();
+    await waitForIDB(page);
 
     await page.reload();
 
@@ -146,6 +188,7 @@ test.describe('Persistence', () => {
     await page.getByLabel('New todo').fill('Stay completed');
     await page.getByRole('button', { name: 'Add' }).click();
     await page.getByRole('checkbox', { name: /mark "stay completed" as completed/i }).click();
+    await waitForIDB(page);
 
     await page.reload();
 
@@ -158,6 +201,7 @@ test.describe('Persistence', () => {
     await page.getByLabel('New todo').fill('Any task');
     await page.getByRole('button', { name: 'Add' }).click();
     await filterNav(page).getByRole('button', { name: 'Completed' }).click();
+    await waitForIDB(page);
 
     await page.reload();
 

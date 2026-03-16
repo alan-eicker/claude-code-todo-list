@@ -1,68 +1,68 @@
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { useTodos } from './useTodos';
-
-const STORAGE_KEY = 'todo-list';
+import { flushIDB } from '../../../test-utils';
 
 describe('useTodos — persistence', () => {
-  beforeEach(() => {
-    localStorage.clear();
-  });
-
-  it('persists todos to localStorage under the "todo-list" key', () => {
-    const { result } = renderHook(() => useTodos());
-
-    act(() => result.current.addTodo('Buy milk'));
-
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
-    expect(stored.todos).toHaveLength(1);
-    expect(stored.todos[0].text).toBe('Buy milk');
-    expect(stored.todos[0].completed).toBe(false);
-  });
-
-  it('persists filter state to localStorage', () => {
-    const { result } = renderHook(() => useTodos());
-
-    act(() => result.current.setFilter('completed'));
-
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
-    expect(stored.filter).toBe('completed');
-  });
-
-  it('restores todos after a simulated page refresh', () => {
+  it('persists todos to IndexedDB and restores them after remount', async () => {
     const { result, unmount } = renderHook(() => useTodos());
 
-    act(() => result.current.addTodo('Persisted task'));
+    // async act ensures React 18 flushes the persist useEffect before flushIDB.
+    await act(async () => result.current.addTodo('Buy milk'));
+
+    // Flush async idbSet effect before unmounting.
+    await flushIDB();
     unmount();
 
     const { result: restored } = renderHook(() => useTodos());
-    expect(restored.current.todos).toHaveLength(1);
-    expect(restored.current.todos[0].text).toBe('Persisted task');
+
+    await waitFor(() => {
+      expect(restored.current.todos).toHaveLength(1);
+    });
+
+    expect(restored.current.todos[0].text).toBe('Buy milk');
+    expect(restored.current.todos[0].completed).toBe(false);
   });
 
-  it('restores filter state after a simulated page refresh', () => {
+  it('persists filter state to IndexedDB and restores it after remount', async () => {
     const { result, unmount } = renderHook(() => useTodos());
 
-    act(() => result.current.setFilter('active'));
+    await act(async () => result.current.setFilter('completed'));
+
+    await flushIDB();
     unmount();
 
     const { result: restored } = renderHook(() => useTodos());
-    expect(restored.current.filter).toBe('active');
+
+    await waitFor(() => {
+      expect(restored.current.filter).toBe('completed');
+    });
   });
 
-  it('restores completed status of todos after a simulated page refresh', () => {
+  it('restores completed status of todos after remount', async () => {
     const { result, unmount } = renderHook(() => useTodos());
 
-    act(() => result.current.addTodo('Toggle me'));
+    await act(async () => result.current.addTodo('Toggle me'));
+
+    await flushIDB();
+
     const id = result.current.todos[0].id;
-    act(() => result.current.toggleTodo(id));
+    await act(async () => result.current.toggleTodo(id));
+
+    await flushIDB();
     unmount();
 
     const { result: restored } = renderHook(() => useTodos());
-    expect(restored.current.todos[0].completed).toBe(true);
+
+    await waitFor(() => {
+      expect(restored.current.todos[0].completed).toBe(true);
+    });
   });
 
-  it('starts empty when localStorage has no stored state', () => {
+  it('starts empty when IndexedDB has no stored state', async () => {
     const { result } = renderHook(() => useTodos());
+
+    await flushIDB();
+
     expect(result.current.todos).toHaveLength(0);
     expect(result.current.filter).toBe('all');
   });

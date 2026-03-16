@@ -1,5 +1,7 @@
 import '@testing-library/jest-dom';
 import { randomUUID } from 'crypto';
+import { serialize, deserialize } from 'v8';
+import { IDBFactory } from 'fake-indexeddb';
 
 // jsdom does not expose crypto.randomUUID — polyfill using Node's built-in crypto
 Object.defineProperty(global, 'crypto', {
@@ -21,4 +23,15 @@ Object.defineProperty(window, 'matchMedia', {
     removeEventListener: jest.fn(),
     dispatchEvent: jest.fn(),
   })),
+});
+
+// jsdom 20 does not expose structuredClone on the window global. fake-indexeddb
+// v6 requires it to deep-clone stored values. Use Node's v8 serialize/deserialize
+// for a correct structured-clone implementation in the test environment.
+global.structuredClone = <T>(value: T): T => deserialize(serialize(value)) as T;
+
+// jsdom does not implement IndexedDB. Replace it with fake-indexeddb before
+// each test and reset it to a fresh instance so tests are fully isolated.
+beforeEach(() => {
+  global.indexedDB = new IDBFactory();
 });
