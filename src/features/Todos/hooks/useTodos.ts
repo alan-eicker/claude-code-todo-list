@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import type { FilterType, Todo, TodoAction, TodoState } from '../types';
 import { usePersistedReducer } from '../../../hooks/usePersistedReducer';
 
@@ -62,13 +63,20 @@ export const useTodos = (): UseTodosReturn => {
   const activeCount = state.todos.filter((t) => !t.completed).length;
   const todos = applyFilter(state.todos, state.filter);
 
+  // Stable references so React.memo on child components (e.g. TodoItem) can
+  // bail out of re-renders when only unrelated state changes.
+  const addTodo = useCallback((text: string) => dispatch({ type: 'ADD_TODO', payload: text }), [dispatch]);
+  const toggleTodo = useCallback((id: string) => dispatch({ type: 'TOGGLE_TODO', payload: id }), [dispatch]);
+  const deleteTodo = useCallback((id: string) => dispatch({ type: 'DELETE_TODO', payload: id }), [dispatch]);
+  const setFilter = useCallback((filter: FilterType) => dispatch({ type: 'SET_FILTER', payload: filter }), [dispatch]);
+
   return {
     todos,
     filter: state.filter,
     activeCount,
-    addTodo: (text) => dispatch({ type: 'ADD_TODO', payload: text }),
-    toggleTodo: (id) => dispatch({ type: 'TOGGLE_TODO', payload: id }),
-    deleteTodo: (id) => dispatch({ type: 'DELETE_TODO', payload: id }),
-    setFilter: (filter) => dispatch({ type: 'SET_FILTER', payload: filter }),
+    addTodo,
+    toggleTodo,
+    deleteTodo,
+    setFilter,
   };
 }

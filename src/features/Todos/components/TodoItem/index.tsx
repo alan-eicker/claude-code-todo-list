@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { Todo } from '../../types';
 import styles from './TodoItem.module.css';
 
@@ -7,7 +8,7 @@ interface TodoItemProps {
   onDelete: (id: string) => void;
 }
 
-export const TodoItem = ({ todo, onToggle, onDelete }: TodoItemProps) => {
+const TodoItemComponent = ({ todo, onToggle, onDelete }: TodoItemProps) => {
   return (
     <li className={styles.item}>
       <label className={styles.label}>
@@ -30,4 +31,6 @@ export const TodoItem = ({ todo, onToggle, onDelete }: TodoItemProps) => {
       </button>
     </li>
   );
-}
+};
+
+export const TodoItem = memo(TodoItemComponent);

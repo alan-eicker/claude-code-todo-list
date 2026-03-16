@@ -15,11 +15,9 @@ const getInitialTheme = (): Theme => {
 };
 
 const useTheme = () => {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const initial = getInitialTheme();
-    document.documentElement.setAttribute('data-theme', initial);
-    return initial;
-  });
+  // The initial data-theme attribute is set by the inline script in index.html
+  // before first paint, so we only need to read the stored value here.
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);

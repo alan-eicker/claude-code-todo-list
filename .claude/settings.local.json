@@ -20,7 +20,9 @@
       "Bash(npm run lint)",
       "Bash(npx tsc -p tsconfig.node.json --noEmit)",
       "Bash(npm run test:coverage)",
-      "mcp__Claude_Preview__preview_start"
+      "mcp__Claude_Preview__preview_start",
+      "Bash(gzip -c /Users/alaneicker/Desktop/todo-list/dist/assets/index-CtLDcUAu.js)",
+      "Bash(npm test:*)"
     ]
   }
 }
