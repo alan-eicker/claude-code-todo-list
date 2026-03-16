@@ -19,7 +19,8 @@
       "Bash(npx tsc --noEmit)",
       "Bash(npm run lint)",
       "Bash(npx tsc -p tsconfig.node.json --noEmit)",
-      "Bash(npm run test:coverage)"
+      "Bash(npm run test:coverage)",
+      "mcp__Claude_Preview__preview_start"
     ]
   }
 }
