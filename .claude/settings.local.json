@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create vite@latest . -- --template react-ts)",
+      "Bash(npm install)",
+      "Bash(npm install --save-dev @eslint/js globals)",
+      "Bash(npm install --save-dev @eslint/js@^9.0.0 globals)",
+      "Bash(npm test)",
+      "Bash(npm install --save-dev ts-node)",
+      "Bash(npx tsc --project tsconfig.app.json --noEmit)",
+      "Bash(npm run build)",
+      "Bash(npx eslint src --ext .ts,.tsx)",
+      "Bash(npm install --save-dev @playwright/test @axe-core/playwright)",
+      "Bash(npx playwright install chromium)",
+      "Bash(npx eslint src e2e --ext .ts,.tsx)",
+      "Bash(npx tsc --project tsconfig.node.json --noEmit)",
+      "Bash(npm run test:e2e)"
+    ]
+  }
+}
