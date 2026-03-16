@@ -404,32 +404,15 @@ features/
 
 ## Framework Choices
 
-### Vite (Preferred for SPAs and component libraries)
-
-Use **Vite** when:
-
-- building a standalone React SPA
-- building a component library
-- fast local dev startup is a priority
-
-### Next.js (Preferred for full-stack and public-facing apps)
-
-Use **Next.js** when:
-
-- building a full-stack web application
-- SEO is a requirement
-- server-side rendering or static generation is needed
-- API routes are needed
-
-Benefits: file-based routing, server components, built-in image optimization, ISR/SSG/SSR.
+This project uses **webpack 5 + Babel** as the build tool for the React SPA. This is the standard setup for this codebase — do not introduce Vite, Next.js, or any other build framework without an explicit decision to migrate.
 
 ---
 
 ## Performance
 
 - **Theme initialisation must use an inline `<script>` in `<head>`**, not a `useEffect` or `useState` initializer. The inline script runs synchronously before the first paint, setting `data-theme` on `<html>` before any CSS is applied. This prevents a flash of the wrong colour scheme and eliminates the CLS it would cause. The hook reads the same stored value but does not touch the DOM on mount — it only syncs changes via `useEffect`.
-- **Build output must split the React vendor chunk** from application code via Vite's `manualChunks`. This allows browsers to cache React and ReactDOM independently from app code, so a code-only deploy does not invalidate the vendor bundle.
-- **Strip `console.*` and `debugger` statements** from production builds using esbuild's `drop` option in `vite.config.ts`. Never ship debug output to production.
+- **Build output must split the React vendor chunk** from application code via webpack's `splitChunks.cacheGroups`. This allows browsers to cache React and ReactDOM independently from app code, so a code-only deploy does not invalidate the vendor bundle.
+- **Strip `console.*` and `debugger` statements** from production builds using Terser's `drop_console` and `drop_debugger` options in `webpack.config.js`. Never ship debug output to production.
 - **Measure performance against a production build** (`npm run build && npm run preview`), not the dev server. Lighthouse scores on the dev server are always artificially low due to unminified, uncompressed bundles.
 - **Avoid side effects in `useState` initialisers.** The initialiser function runs during React's render phase. DOM mutations (e.g. `document.documentElement.setAttribute`) belong in `useEffect` for reactive updates, or in an inline script for one-time initialisation before React mounts.
 
