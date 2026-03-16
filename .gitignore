@@ -10,6 +10,10 @@ node_modules
 dist
 dist-ssr
 
+# Test output
+test-results
+playwright-report
+
 # Coverage
 coverage
 

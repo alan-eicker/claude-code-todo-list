@@ -55,7 +55,7 @@ export default [
     },
   },
   {
-    files: ['playwright.config.ts', 'vite.config.ts'],
+    files: ['playwright.config.ts', 'webpack.config.js'],
     languageOptions: {
       globals: {
         ...globals.node,

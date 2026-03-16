@@ -294,8 +294,7 @@ src/
 ├── components/        # Shared, reusable UI components
 ├── features/          # Feature modules (see structure below)
 ├── hooks/             # Shared custom hooks
-├── pages/             # Route-level page components (or app/ for Next.js)
-├── services/          # API clients, third-party service wrappers
+├── pages/             # Route-level page components
 ├── store/             # Global state (Redux store, slices, context providers)
 ├── styles/            # Global styles, CSS custom properties, resets
 ├── types/             # Shared TypeScript types and interfaces
@@ -348,6 +347,7 @@ features/
 - Export components as named exports; use default exports only at page/route boundaries.
 - Avoid prop drilling beyond 2 levels — use Context or lift state appropriately.
 - `React.memo` and `useCallback` must always be used together on list-item components. `React.memo` alone provides no benefit if the parent passes new function references on every render. Wrap the child with `memo` and stabilise every callback prop with `useCallback` in the parent hook:
+
   ```ts
   // In the hook — stable references
   const toggleTodo = useCallback((id: string) => dispatch(...), [dispatch]);
@@ -355,7 +355,9 @@ features/
   // On the component — bail out of re-renders when props are unchanged
   export const TodoItem = memo(TodoItemComponent);
   ```
+
   When wrapping an arrow function component in `memo`, define the component as a named const first (`TodoItemComponent`) and then export the memoised version (`export const TodoItem = memo(TodoItemComponent)`) so React DevTools and the `react/display-name` lint rule can identify the component correctly.
+
 - Private sub-components used exclusively within one parent file (e.g. icon components like `SunIcon`, `MoonIcon`) may be defined in the same file above the main export. They do not need their own folder. Apply the same rules as any component: arrow function, explicit props interface, `aria-hidden="true"` if decorative.
 - Use `crypto.randomUUID()` for client-side ID generation. It is available natively in all modern browsers and in Node 19+. Do not install `uuid`, `nanoid`, or similar libraries for this purpose. Polyfill it in `setupTests.ts` for Jest (jsdom does not expose it by default).
 - Enumerable UI options that drive a rendered list (e.g. filter buttons) must be defined as a typed module-level constant rather than inline JSX, keeping the render function declarative:
@@ -436,12 +438,12 @@ npm audit --package-lock-only   # after a dry-run add, before committing
 
 ### Severity policy
 
-| Severity | Action |
-| -------- | ------ |
-| **Critical** | Do not install. Find an alternative. |
-| **High** | Do not install. Find an alternative. |
-| **Moderate** | Investigate. Only install if no viable alternative exists and the vulnerability does not affect your usage; document why. |
-| **Low / Info** | Acceptable with awareness; monitor for patches. |
+| Severity       | Action                                                                                                                    |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Critical**   | Do not install. Find an alternative.                                                                                      |
+| **High**       | Do not install. Find an alternative.                                                                                      |
+| **Moderate**   | Investigate. Only install if no viable alternative exists and the vulnerability does not affect your usage; document why. |
+| **Low / Info** | Acceptable with awareness; monitor for patches.                                                                           |
 
 ### Finding alternatives
 

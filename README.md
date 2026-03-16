@@ -12,7 +12,7 @@ A lightweight, accessible todo app built with React and TypeScript. Todos persis
 |---|---|
 | UI | React 18 |
 | Language | TypeScript 5 (strict mode) |
-| Build | Vite 5 |
+| Build | webpack 5 + Babel |
 | Styling | CSS Modules + CSS custom properties |
 | Unit tests | Jest 29 + React Testing Library + jest-axe |
 | E2E tests | Playwright + @axe-core/playwright |
@@ -45,7 +45,7 @@ npx playwright install --with-deps chromium
 npm run dev
 ```
 
-The app is served at `http://localhost:5173`.
+The app is served at `http://localhost:8080`.
 
 ---
 
@@ -53,9 +53,9 @@ The app is served at `http://localhost:5173`.
 
 | Script | Description |
 |---|---|
-| `npm run dev` | Start the Vite development server |
-| `npm run build` | Type-check and produce a production build in `dist/` |
-| `npm run preview` | Serve the production build locally at `http://localhost:4173` |
+| `npm run dev` | Start the webpack development server at `http://localhost:8080` |
+| `npm run build` | Produce a production build in `dist/` |
+| `npm run preview` | Serve the production build locally via `npx serve` |
 | `npm run lint` | Run ESLint across the entire project |
 | `npm run format` | Format all files with Prettier |
 | `npm run format:check` | Check formatting without writing (used in CI) |
@@ -104,7 +104,10 @@ todo-list/
 ├── eslint.config.mjs
 ├── jest.config.ts
 ├── playwright.config.ts
-├── vite.config.ts
+├── webpack.config.js
+├── tsconfig.json                 # Root — composite project references only
+├── tsconfig.app.json             # App source type-checking (browser target)
+├── tsconfig.test.json            # Jest/ts-jest overrides (Node/CommonJS target)
 └── CLAUDE.md                     # Engineering standards and AI coding guidelines
 ```
 
@@ -141,6 +144,18 @@ Theme preference (`light` | `dark`) is stored under the `theme-preference` key i
 ### Persistence
 
 All user-generated state goes through `usePersistedReducer`. Direct `localStorage` reads and writes in components are prohibited — use the hook.
+
+### TypeScript configuration
+
+The project uses three tsconfig files, each with a distinct purpose:
+
+| File | Purpose |
+|---|---|
+| `tsconfig.json` | Root config. Contains no compiler options — acts only as a composite project reference pointer for `tsc` and VS Code. |
+| `tsconfig.app.json` | Used for type-checking application source (`src/`). Targets modern browsers (`ES2020`, DOM libs), enforces `strict` mode, and sets `noEmit: true` since webpack/Babel handle transpilation. |
+| `tsconfig.test.json` | Used by Jest via `ts-jest`. Overrides `module: "CommonJS"` and `moduleResolution: "node"` because Jest runs in Node, not a browser bundler. Also sets `noEmit: false` so ts-jest can emit code to execute. |
+
+The separation prevents test-environment overrides (CommonJS modules, Node resolution) from leaking into the app type-check and vice versa. Always run `npx tsc --noEmit` against `tsconfig.app.json` (the default) to validate application types.
 
 ---
 
@@ -204,7 +219,7 @@ npm run build
 npm run preview
 ```
 
-The app is served at `http://localhost:4173`. This is the correct way to run Lighthouse audits — the dev server produces artificially low performance scores.
+This is the correct way to run Lighthouse audits — the dev server produces artificially low performance scores.
 
 ---
 

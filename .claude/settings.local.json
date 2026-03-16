@@ -23,7 +23,9 @@
       "mcp__Claude_Preview__preview_start",
       "Bash(gzip -c /Users/alaneicker/Desktop/todo-list/dist/assets/index-CtLDcUAu.js)",
       "Bash(npm test:*)",
-      "Bash(git -C /Users/alaneicker/Desktop/todo-list remote get-url origin)"
+      "Bash(git -C /Users/alaneicker/Desktop/todo-list remote get-url origin)",
+      "Bash(npm install:*)",
+      "Bash(npm uninstall:*)"
     ]
   }
 }
