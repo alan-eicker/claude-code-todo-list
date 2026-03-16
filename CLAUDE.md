@@ -183,6 +183,23 @@ Testing is mandatory. All new features and bug fixes must include tests.
 - Aim for meaningful coverage, not 100% line coverage for its own sake — focus on critical paths and edge cases.
 - Mock only at the boundary (API calls, third-party modules) — do not over-mock.
 
+### Coverage
+
+All projects must configure Jest coverage in `jest.config.ts`:
+
+- `collectCoverageFrom` — include `src/**/*.{ts,tsx}`; exclude `*.d.ts`, `__mocks__`, and `main.tsx` (entry point tested by E2E).
+- `coverageReporters: ['text', 'html', 'lcov']` — text for the terminal, HTML for local inspection, lcov for CI artifacts.
+- `coverageDirectory: 'coverage'` — output directory (must be git-ignored).
+- `coverageThreshold` — enforce a global minimum of **80%** for branches, functions, lines, and statements. Raise the threshold as the project matures; never lower it.
+
+Run coverage locally with:
+
+```bash
+npm run test:coverage
+```
+
+Coverage reports are uploaded as a CI artifact (`coverage-report`) on every deploy workflow run and retained for 30 days.
+
 ### jest-axe
 
 - **Every component test must include an axe accessibility assertion.**
