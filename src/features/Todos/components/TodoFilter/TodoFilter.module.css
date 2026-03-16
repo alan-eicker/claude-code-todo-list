@@ -13,7 +13,7 @@
 
 .filterList {
   display: flex;
-  gap: var(--spacing-xs);
+  gap: 5px;
 }
 
 .filterButton {
