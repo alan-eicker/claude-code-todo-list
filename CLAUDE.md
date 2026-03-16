@@ -333,6 +333,53 @@ Benefits: file-based routing, server components, built-in image optimization, IS
 
 ---
 
+## Dependency Security
+
+Before installing any npm package, audit it for known vulnerabilities and supply-chain risk. A package with a high or critical severity vulnerability must not be installed — find a safe alternative instead.
+
+### Pre-install checklist
+
+Run all three checks before adding a new dependency:
+
+```bash
+# 1. Check the package's published vulnerability history
+npm audit --package-lock-only   # after a dry-run add, before committing
+
+# 2. Inspect the package directly on the npm advisory database
+#    https://www.npmjs.com/advisories  (search by package name)
+
+# 3. Review basic health signals on npm
+#    - Weekly downloads (prefer packages with broad adoption)
+#    - Last publish date (unmaintained = higher risk)
+#    - Number of open issues / CVEs on GitHub
+```
+
+### Severity policy
+
+| Severity | Action |
+| -------- | ------ |
+| **Critical** | Do not install. Find an alternative. |
+| **High** | Do not install. Find an alternative. |
+| **Moderate** | Investigate. Only install if no viable alternative exists and the vulnerability does not affect your usage; document why. |
+| **Low / Info** | Acceptable with awareness; monitor for patches. |
+
+### Finding alternatives
+
+If a preferred package has high/critical vulnerabilities:
+
+1. Search for actively maintained forks or drop-in replacements.
+2. Check if the vulnerability is in a dependency of the dependency (`npm explain <package>`) — if the vulnerable transitive dep is not reachable from your code path, document this explicitly.
+3. Consider implementing the functionality natively if the package is small-scope (e.g. a single utility function).
+4. If no safe alternative exists, escalate to the team rather than installing a known-vulnerable package.
+
+### Ongoing maintenance
+
+- Run `npm audit` as part of the CI pipeline. A **high or critical** finding fails the build.
+- Review `npm outdated` regularly and keep dependencies current.
+- Pin exact versions (`--save-exact`) for security-sensitive packages so patch-level updates are deliberate, not automatic.
+
+---
+
 ## Code Quality Rules
 
 - **All ESLint errors must be resolved before a task is considered complete.** Run `npm run lint` and fix every error. Warnings may be left if they are intentional, but errors are blocking.
